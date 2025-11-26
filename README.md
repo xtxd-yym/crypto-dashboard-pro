@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# Crypto Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern cryptocurrency dashboard application built with **React**, designed for tracking real-time market data and trends.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* **Real-time Data**: Live tracking of cryptocurrency prices.
+* **Interactive Charts**: Visualizing market trends using dynamic charts.
+* **Responsive Design**: Fully optimized for desktop and mobile devices.
+* **Modern Stack**: Built with performance and scalability in mind.
 
-## React Compiler
+## 🛠 Tech Stack
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+* **Core**: React 18, TypeScript, Vite
+* **State Management**: Zustand (Optional)
+* **Styling**: Tailwind CSS (Optional)
+* **Data Fetching**: Axios
+* **Linting**: ESLint, Prettier
 
-## Expanding the ESLint configuration
+## 📦 Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Follow these steps to set up the project locally.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* Node.js (v18 or higher)
+* npm or yarn
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Installation
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1.  Clone the repository:
+    ```bash
+    git clone git@github.com:xtxd-yym/crypto-dashboard.git
+    ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2.  Navigate to the project directory:
+    ```bash
+    cd crypto-dashboard
+    ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+### Running the App
+
+Start the development server:
+
+```bash
+npm run dev
+
+Open http://localhost:5173 to view it in the browser.
+
+🤝 Contributing
+Create a new branch (git checkout -b feat/feature-name)
+
+Commit your changes (git commit -m 'feat: add some feature')
+
+Push to the branch (git push origin feat/feature-name)
+
+Open a Pull Request
