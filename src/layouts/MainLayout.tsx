@@ -1,7 +1,10 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { useAppHydration } from '../hooks/useAppHydration';
 
 export const MainLayout = () => {
+  useAppHydration();
+  
   return (
     <div className="min-h-screen bg-dark-bg text-slate-100 font-sans">
       {/* Sidebar - Fixed Left */}

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { PortfolioPage } from '../features/portfolio/PortfolioPage';
 
 // We define our route structure here
 export const router = createBrowserRouter([
@@ -18,7 +19,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'portfolio',
-        element: <div className="p-4 text-slate-400">Portfolio Page (Coming Soon)</div>,
+        element: <PortfolioPage />,
       },
     ],
   },
