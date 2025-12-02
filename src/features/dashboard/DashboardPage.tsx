@@ -29,7 +29,7 @@ export const DashboardPage = () => {
       {/* Data Grid */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.map((coin) => (
+          {data.slice(0, 8).map((coin) => (
             <div
               key={coin.id}
               className="bg-dark-card border border-dark-border p-4 rounded-xl hover:border-brand-500/50 transition-colors"
