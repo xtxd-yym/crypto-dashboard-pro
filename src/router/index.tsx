@@ -5,6 +5,7 @@ import { PortfolioPage } from '../features/portfolio/PortfolioPage';
 import { LoginPage } from '../pages/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute'; // Import the guard
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { MarketPage } from '../features/market/MarketPage';
 
 export const router = createBrowserRouter([
   // Public Routes
@@ -27,7 +28,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'market',
-            element: <div className="p-4 text-slate-400">Market Analysis (Coming Soon)</div>,
+            element: <MarketPage />,
           },
           {
             path: 'portfolio',
