@@ -1,7 +1,5 @@
-import ReactECharts from 'echarts-for-react';
-import { type EChartsOption } from 'echarts';
-import { graphic } from 'echarts';
-import { useMemo } from 'react';
+import { useEffect, useRef } from 'react';
+import * as echarts from 'echarts';
 import type { CallbackDataParams } from 'echarts/types/dist/shared';
 
 interface SparklineChartProps {
@@ -10,10 +8,18 @@ interface SparklineChartProps {
 }
 
 export const SparklineChart = ({ data, color }: SparklineChartProps) => {
-  // We use useMemo so the chart config is only re-calculated when data or color changes
-  const option: EChartsOption = useMemo(() => {
-    return {
-      // 1. Tooltip Configuration
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    // 1. Initialize the chart if the ref exists
+    if (chartRef.current) {
+      // Initialize fast (renderer: 'canvas' is default)
+      chartInstance.current = echarts.init(chartRef.current);
+    }
+
+    // 2. Set options
+    const option: echarts.EChartsOption = {
       tooltip: {
         trigger: 'axis',
         confine: true,
@@ -43,7 +49,6 @@ export const SparklineChart = ({ data, color }: SparklineChartProps) => {
           
           return `$${Number(value).toLocaleString()}`;
         },
-        // ... axisPointer config remains the same
         axisPointer: {
           type: 'line',
           lineStyle: {
@@ -54,7 +59,7 @@ export const SparklineChart = ({ data, color }: SparklineChartProps) => {
         },
       },
       grid: {
-        top: 5,    // Added slight padding so tooltip doesn't get cut off top
+        top: 5,
         bottom: 5,
         left: 5,
         right: 5,
@@ -76,8 +81,7 @@ export const SparklineChart = ({ data, color }: SparklineChartProps) => {
           data: data,
           type: 'line',
           smooth: true,
-          showSymbol: false, // Hidden by default
-          // Show a dot only on hover (emphasizes the specific point)
+          showSymbol: false,
           emphasis: {
             focus: 'series',
             itemStyle: {
@@ -91,34 +95,32 @@ export const SparklineChart = ({ data, color }: SparklineChartProps) => {
             color: color,
           },
           areaStyle: {
-            /**
-            * Refactoring Note:
-            * The AI suggested `new echarts.graphic.LinearGradient`, treating it as a global UMD variable.
-            * I refactored this to use the imported `graphic` module directly.
-            * This fixes the TS2686 error and aligns with ES Module standards for better tree-shaking.
-            */
-            color: new graphic.LinearGradient(0, 0, 0, 1, [
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: color.replace(')', ', 0.2)').replace('rgb', 'rgba') },
               { offset: 1, color: 'transparent' },
             ]),
           },
         },
       ],
+      animation: false, // Optional: Disable animation for instant rendering
     };
-  }, [data, color]);
 
-  // If there's no data, render a placeholder
+    chartInstance.current?.setOption(option);
+
+    // 3. Robust Cleanup Function
+    return () => {
+      // This explicitly destroys the instance before the DOM node is removed
+      // preventing the "disconnect" error.
+      chartInstance.current?.dispose();
+    };
+  }, [data, color]); // Re-run if data or color changes
+
   if (!data || data.length === 0) {
     return <div className="h-12 flex items-center justify-center text-xs text-slate-600">No Data</div>;
   }
 
   return (
-    <div className="h-12 w-24"> {/* Fixed container for the sparkline */}
-      <ReactECharts
-        option={option}
-        style={{ height: '100%', width: '100%' }}
-        notMerge={true} // Important for performance when updating data
-      />
-    </div>
+    // We render a plain div and let ECharts take over
+    <div ref={chartRef} className="h-12 w-24" />
   );
 };

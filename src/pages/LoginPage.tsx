@@ -35,10 +35,15 @@ export const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label /* E2E & A11Y CRITICAL: 
+               The 'htmlFor' attribute programmatically links this label to the input.
+               Without this, Playwright's `getByLabel` cannot find the input, and 
+               Screen Readers will announce "Input" instead of "Email Address".
+            */htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">
               Email Address
             </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -49,10 +54,11 @@ export const LoginPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1">
               Password
             </label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
