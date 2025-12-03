@@ -1,0 +1,79 @@
+name: CI/CD Pipeline
+
+# Trigger: Run on pushes to main and any Pull Request
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # JOB 1: Code Quality & Unit Tests (Fast)
+  # This verifies the logic and syntax before we attempt expensive E2E tests
+  quality-check:
+    name: ⚡ Lint & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Linter
+        run: pnpm lint
+
+      - name: Run Unit Tests (Vitest)
+        run: pnpm test
+
+  # JOB 2: End-to-End Tests (Slow/Heavy)
+  # Only runs if 'quality-check' passes
+  e2e-tests:
+    name: 🎭 Playwright E2E
+    needs: quality-check # Wait for Unit tests to pass first
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Playwright Tests
+        run: pnpm exec playwright test
+
+      # Enterprise Best Practice: Upload the report if tests fail
+      # This lets you download a zip file from GitHub to see the video/trace of the failure
+      - name: Upload Playwright Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
