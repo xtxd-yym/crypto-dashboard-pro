@@ -2,6 +2,13 @@
 
 [![CI/CD Pipeline](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml)
 
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
+
 A modern cryptocurrency dashboard application built with **React**, designed for tracking real-time market data and trends.
 
 ## 🚀 Features
