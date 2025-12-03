@@ -78,7 +78,7 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
-# JOB 3: Deploy to Production
+  # JOB 3: Deploy to Production
   # Only runs if E2E tests pass
   deploy-production:
     name: 🚀 Deploy to Vercel
@@ -88,6 +88,17 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install Vercel CLI
         run: pnpm install --global vercel@latest
