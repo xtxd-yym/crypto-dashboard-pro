@@ -1,4 +1,4 @@
-import { defineConfig, mergeConfig } from 'vitest/config';
+import { defineConfig, mergeConfig, configDefaults } from 'vitest/config';
 import viteConfig from './vite.config';
 
 export default mergeConfig(viteConfig, defineConfig({
@@ -7,5 +7,7 @@ export default mergeConfig(viteConfig, defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: false, // Disable CSS processing for faster tests
+    // FIX: Tell Vitest to ignore the E2E tests folder
+    exclude: [...configDefaults.exclude, 'tests/**'],
   },
 }));
