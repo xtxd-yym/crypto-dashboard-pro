@@ -1,5 +1,7 @@
 # Crypto Dashboard
 
+[![CI/CD Pipeline](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml)
+
 A modern cryptocurrency dashboard application built with **React**, designed for tracking real-time market data and trends.
 
 ## 🚀 Features
