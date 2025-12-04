@@ -21,5 +21,9 @@ export interface MarketState {
   data: Coin[];
   loading: boolean;
   error: string | null;
-  fetchMarketData: () => Promise<void>;
+  isPolling: boolean;
+  pollIntervalId: ReturnType<typeof setInterval> | null;
+  fetchMarketData: (isBackground?: boolean) => Promise<void>;
+  startPolling: (intervalMs?: number) => void;
+  stopPolling: () => void;
 }
