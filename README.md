@@ -1,6 +1,8 @@
-# Crypto Dashboard
+# 📈 Crypto Dashboard
 
 [![CI/CD Pipeline](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml)
+
+A high-performance, real-time cryptocurrency dashboard built to monitor market trends and manage asset portfolios. Designed with a focus on **performance**, **clean architecture**, and **testability**.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -9,63 +11,78 @@
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
 
-A modern cryptocurrency dashboard application built with **React**, designed for tracking real-time market data and trends.
+## ✨ Key Features
 
-## 🚀 Features
-
-* **Real-time Data**: Live tracking of cryptocurrency prices.
-* **Interactive Charts**: Visualizing market trends using dynamic charts.
-* **Responsive Design**: Fully optimized for desktop and mobile devices.
-* **Modern Stack**: Built with performance and scalability in mind.
+* **Real-time Market Data**: Live cryptocurrency pricing updates with polling mechanisms.
+* **Interactive Visualization**: High-performance charts using Apache ECharts.
+* **Portfolio Management**: Track asset value with real-time calculations.
+* **Optimized UX**: "Silent Updates" ensure data refreshes without blocking UI interactions.
+* **Robust Error Handling**: Graceful degradation and user-friendly error messages.
 
 ## 🛠 Tech Stack
 
-* **Core**: React 18, TypeScript, Vite
-* **State Management**: Zustand (Optional)
-* **Styling**: Tailwind CSS (Optional)
-* **Data Fetching**: Axios
-* **Linting**: ESLint, Prettier
+* **Core**: React 19, TypeScript, Vite
+* **State Management**: Zustand (chosen for atomic updates and minimal boilerplate)
+* **Styling**: TailwindCSS
+* **Data Fetching**: Axios (with AbortController for cancellation)
+* **Testing**: Vitest, React Testing Library
+* **Visualization**: ECharts for React
 
-## 📦 Getting Started
+## 🧠 Technical Highlights & Decisions
 
-Follow these steps to set up the project locally.
+### 1. State Management Strategy
+Instead of a monolithic Redux store, I opted for **Zustand**. This allows for:
+* **Atomic Selectors**: Components only re-render when the specific slice of state they consume changes.
+* **Decoupled Logic**: Business logic (fetching, transforming data) is encapsulated within the store actions, keeping UI components pure.
+
+### 2. Performance Optimization
+* **Silent Polling**: The `useMarketStore` implements a polling mechanism that distinguishes between "Initial Load" (spinner) and "Background Update" (silent), preventing UI flicker.
+* **Throttled Rendering**: Chart components use `useMemo` to ensure expensive canvas repaints only occur when data actually changes.
+
+### 3. Testing Strategy
+* **Unit Tests**: Focused on complex business logic within Stores (e.g., snake_case transformation, polling limits).
+* **Integration Tests**: Verify that hooks interacts correctly with the API layer.
+* **Mocking**: Used `vi.useFakeTimers()` to test time-dependent features like polling without slowing down the test suite.
+
+## 🚀 Getting Started
 
 ### Prerequisites
-
-* Node.js (v18 or higher)
-* npm or yarn
+* Node.js >= 18
+* pnpm (recommended) or npm/yarn
 
 ### Installation
 
-1.  Clone the repository:
-    ```bash
-    git clone git@github.com:xtxd-yym/crypto-dashboard.git
-    ```
-
-2.  Navigate to the project directory:
-    ```bash
-    cd crypto-dashboard
-    ```
-
-3.  Install dependencies:
-    ```bash
-    npm install
-    ```
-
-### Running the App
-
-Start the development server:
-
 ```bash
-npm run dev
+# Clone the repository
+git clone [https://github.com/your-username/crypto-dashboard.git](https://github.com/your-username/crypto-dashboard.git)
 
-Open http://localhost:5173 to view it in the browser.
+# Install dependencies
+pnpm install
+Development
+Bash
 
-🤝 Contributing
-Create a new branch (git checkout -b feat/feature-name)
+pnpm dev
+Testing
+Bash
 
-Commit your changes (git commit -m 'feat: add some feature')
+# Run unit tests
+pnpm test
 
-Push to the branch (git push origin feat/feature-name)
+📂 Project Structure
+Plaintext
 
-Open a Pull Request
+src/
+├── components/     # Shared UI components (Button, Card, etc.)
+├── features/       # Feature-based modules (MarketTable, PortfolioChart)
+├── hooks/          # Custom React hooks
+├── stores/         # Zustand stores (Global State)
+├── utils/          # Helper functions (currency formatting, date parsing)
+└── types/          # TypeScript definitions
+📈 Future Improvements
+[ ] Add WebSocket support for true push-based updates.
+
+[ ] Implement virtualization for the asset list (for managing 1000+ items).
+
+[ ] Add Dark/Light mode theme persistence.
+
+Created by Yuyuanmin.
