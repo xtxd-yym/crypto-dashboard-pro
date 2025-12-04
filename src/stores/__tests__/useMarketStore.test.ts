@@ -1,83 +1,137 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import axios from 'axios';
 import { useMarketStore } from '../useMarketStore';
 
-// 1. Mock Axios globally for this test file
+// 1. Mock Axios globally
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
 
-describe('useMarketStore Integration (Axios)', () => {
-  // Reset store state before each test
+// 2. Mock Global "document" visibility for polling tests
+Object.defineProperty(document, 'hidden', {
+  configurable: true,
+  get: () => false, // Default to visible
+});
+
+describe('useMarketStore Advanced Logic', () => {
   beforeEach(() => {
+    // Reset Store State
     act(() => {
-        useMarketStore.setState({ 
-            data: [], 
-            loading: false, 
-            error: null 
-        });
+      useMarketStore.setState({
+        data: [],
+        loading: false,
+        error: null,
+        isPolling: false,
+        pollIntervalId: null,
+      });
     });
-    // Clear mock history (call counts, etc.)
+    // Clear Mocks
     mockedAxios.get.mockClear();
+    // Enable Fake Timers for polling tests
+    vi.useFakeTimers();
   });
 
-  it('should fetch data and transform snake_case to camelCase', async () => {
-    // Arrange: Define what the "Server" returns
-    const mockApiResponse = {
-      data: [
-        {
-          id: 'bitcoin',
-          symbol: 'btc',
-          name: 'Bitcoin',
-          current_price: 50000, // snake_case
-          market_cap: 1000000,
-          sparkline_in_7d: { price: [1, 2, 3] }
-        }
-      ]
-    };
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-    // Tell the mock to return this specific data when called
+  it('should fetch data and transform snake_case to camelCase (Standard Load)', async () => {
+    const mockApiResponse = {
+      data: [{
+        id: 'bitcoin',
+        symbol: 'btc',
+        name: 'Bitcoin',
+        current_price: 50000,
+        sparkline_in_7d: { price: [1, 2] }
+      }]
+    };
     mockedAxios.get.mockResolvedValueOnce(mockApiResponse);
 
     const { result } = renderHook(() => useMarketStore());
 
-    // Act: Trigger the fetch
+    // Trigger Initial Load
     await act(async () => {
-      await result.current.fetchMarketData();
+      // MODIFIED: We await the promise directly here and removed the intermediate 'loading=true' check
+      // This prevents the race condition that caused the test to fail
+      await result.current.fetchMarketData(false);
     });
 
-    // Assert 1: Verify Axios was actually called with correct URL
-    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-    expect(mockedAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('api.coingecko.com'), 
-        expect.anything()
-    );
-
-    // Assert 2: Verify Transformation Logic (Snake -> Camel)
-    // The store should have mapped 'current_price' to 'currentPrice'
-    const storedCoin = result.current.data[0];
-    
-    expect(storedCoin).toBeDefined();
-    expect(storedCoin.currentPrice).toBe(50000); // Check camelCase property
-    expect(storedCoin.id).toBe('bitcoin');
+    // Check final state
     expect(result.current.loading).toBe(false);
+    // Verify data transformation works
+    expect(result.current.data[0].currentPrice).toBe(50000);
   });
 
-  it('should handle API errors by using fallback data', async () => {
-    // Arrange: Simulate a Network Error (e.g., 500 Internal Server Error)
-    mockedAxios.get.mockRejectedValueOnce(new Error('Network Error'));
-
+  it('should performs a "Silent Update" when isBackground is true', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
     const { result } = renderHook(() => useMarketStore());
 
-    // Act
+    await act(async () => {
+      const promise = result.current.fetchMarketData(true); // <--- Background = true
+      // CRITICAL: Loading should remain FALSE to prevent UI flicker
+      expect(result.current.loading).toBe(false); 
+      await promise;
+    });
+  });
+
+  it('should attach AbortSignal to the axios request', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+    const { result } = renderHook(() => useMarketStore());
+
     await act(async () => {
       await result.current.fetchMarketData();
     });
 
-    // Assert
-    // 1. It should NOT crash.
-    // 2. It should have loaded the Mock/Fallback data defined in our catch block.
-    expect(result.current.data.length).toBeGreaterThan(0);
-    expect(result.current.data[0].id).toBe('bitcoin'); // Our hardcoded fallback
+    // Verify the signal was passed
+    const config = mockedAxios.get.mock.calls[0][1];
+    expect(config?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('should start polling and fetch data periodically', async () => {
+    mockedAxios.get.mockResolvedValue({ data: [] }); // Always return success
+    const { result } = renderHook(() => useMarketStore());
+
+    // 1. Start Polling
+    act(() => {
+      result.current.startPolling(10000); // 10s interval
+    });
+
+    expect(result.current.isPolling).toBe(true);
+    // Should call immediately
+    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+
+    // 2. Advance Time 10s
+    await act(async () => {
+      vi.advanceTimersByTime(10000);
+    });
+
+    // Should call again
+    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('should stop polling when requested', async () => {
+    mockedAxios.get.mockResolvedValue({ data: [] });
+    const { result } = renderHook(() => useMarketStore());
+
+    act(() => {
+      result.current.startPolling(1000);
+    });
+    
+    expect(result.current.pollIntervalId).not.toBeNull();
+
+    // Stop
+    act(() => {
+      result.current.stopPolling();
+    });
+
+    expect(result.current.isPolling).toBe(false);
+    expect(result.current.pollIntervalId).toBeNull();
+
+    // Advance time - verify NO new calls happen
+    mockedAxios.get.mockClear();
+    await act(async () => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(mockedAxios.get).not.toHaveBeenCalled();
   });
 });

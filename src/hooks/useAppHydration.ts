@@ -1,39 +1,31 @@
 /**
  * @hook useAppHydration
  * @description
- * Solves a critical data availability issue found during the "Portfolio Deep Link" edge case.
- *
- * @problem
- * Previously, market data fetching was coupled to the `DashboardPage` component.
- * If a user accessed the app directly via `/portfolio`, the Dashboard never mounted,
- * causing the Store to remain empty and the "Add Asset" modal to fail (empty dropdown).
- *
- * @solution
- * "Lifted" the fetching logic up to the `MainLayout` level. This hook ensures
- * global domain data is initialized (hydrated) immediately upon app entry,
- * regardless of the specific route the user lands on.
- *
- * @author [Your Name]
+ * Manages the global data lifecycle for the application.
+ * * @role
+ * 1. Hydration: Ensures market data exists immediately upon app entry (deep links).
+ * 2. Synchronization: Keeps market data fresh globally (Polling).
+ * * @usage
+ * Call this hook ONCE in our <MainLayout /> or <App /> component.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useMarketStore } from '../stores/useMarketStore';
 
-/**
- * This hook is responsible for fetching essential global data
- * when the application first loads.
- */
 export const useAppHydration = () => {
-  const { data, fetchMarketData } = useMarketStore();
-  // We use a ref to ensure this run once per mount in strict mode
-  const initialized = useRef(false);
+  // We utilize the store's "Smart Actions" which already handle
+  // concurrency (AbortController) and duplication checks.
+  const startPolling = useMarketStore((state) => state.startPolling);
+  const stopPolling = useMarketStore((state) => state.stopPolling);
 
   useEffect(() => {
-    // Only fetch if we haven't initialized and don't have data yet
-    if (!initialized.current && data.length === 0) {
-      console.log('💧 App Hydration: Fetching initial market data...');
-      fetchMarketData();
-      initialized.current = true;
-    }
-  }, [data.length, fetchMarketData]);
+    // Start the global heartbeat (30s interval)
+    // The store automatically triggers the immediate first fetch.
+    startPolling(30000);
+
+    // Cleanup: Stop polling when the app/layout unmounts
+    return () => {
+      stopPolling();
+    };
+  }, [startPolling, stopPolling]);
 };
