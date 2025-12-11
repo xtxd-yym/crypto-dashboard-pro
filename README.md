@@ -29,8 +29,9 @@ A high-performance, real-time cryptocurrency dashboard built to monitor market t
 * **Visualization**: ECharts for React
 
 ## 🏗️ Architecture
-
-![System Architecture](./assets/architecture.png)
+<div align="center">
+  <img src="./assets/architecture.png" width="800px" alt="Architecture Diagram" />
+</div>
 
 ## 🧠 Technical Highlights & Decisions
 
