@@ -28,6 +28,13 @@ A high-performance, real-time cryptocurrency dashboard built to monitor market t
 * **Testing**: Vitest, React Testing Library
 * **Visualization**: ECharts for React
 
+## ✨ Feature Demo
+> **Real-time Updates:** Data is pushed instantly via WebSocket (Binance API).
+
+<div align="center">
+  <img src="./assets/demo.gif" width="100%" alt="Project Demo" />
+</div>
+
 ## 🏗️ Architecture
 <div align="center">
   <img src="./assets/architecture.png" width="800px" alt="Architecture Diagram" />
