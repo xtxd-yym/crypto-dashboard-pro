@@ -21,8 +21,8 @@ interface RawCoinData {
 }
 
 export const useMarketStore = create<MarketState>((set, get) => {
-  // Closure variable to manage request cancellation outside of state
   let abortController: AbortController | null = null;
+  let ws: WebSocket | null = null;
 
   return {
     data: [],
@@ -32,20 +32,18 @@ export const useMarketStore = create<MarketState>((set, get) => {
     pollIntervalId: null,
 
     fetchMarketData: async (isBackground = false) => {
-      // 1. Concurrency Control: Cancel any pending request
       if (abortController) {
         abortController.abort();
       }
       abortController = new AbortController();
 
-      // 2. Silent Update: Only trigger global loading state if NOT a background poll
       if (!isBackground) {
         set({ loading: true, error: null });
       }
 
       try {
         const response = await axios.get<RawCoinData[]>(COINGECKO_URL, {
-          signal: abortController.signal, // Connect abort signal
+          signal: abortController.signal,
           params: {
             vs_currency: 'usd',
             order: 'market_cap_desc',
@@ -74,66 +72,97 @@ export const useMarketStore = create<MarketState>((set, get) => {
 
         set({ data: cleanData, loading: false });
       } catch (error) {
-        // 3. Error Handling: Ignore abort errors (user navigation/race conditions)
         if (axios.isCancel(error)) {
           return;
         }
 
         console.warn(error, "API Error, using fallback.");
-        
-        // Only use fallback if we don't have data yet (optional strategy)
-        const mockData: Coin[] = [
-          {
-            id: 'bitcoin',
-            name: 'Bitcoin',
-            symbol: 'btc',
-            image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-            currentPrice: 64230,
-            priceChangePercentage24h: 2.4,
-            marketCap: 1200000000,
-            marketCapRank: 1,
-            totalVolume: 50000000,
-            high24h: 65000,
-            low24h: 63000,
-            sparklineIn7d: { price: [] },
-          },
-        ];
 
-        set({ data: mockData, loading: false, error: 'Failed to fetch, showing cached/mock data' });
+        // Use fallback logic only if we have empty data
+        if (get().data.length === 0) {
+          const mockData: Coin[] = [
+            {
+              id: 'bitcoin',
+              name: 'Bitcoin',
+              symbol: 'btc',
+              image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+              currentPrice: 64230,
+              priceChangePercentage24h: 2.4,
+              marketCap: 1200000000,
+              marketCapRank: 1,
+              totalVolume: 50000000,
+              high24h: 65000,
+              low24h: 63000,
+              sparklineIn7d: { price: [] },
+            },
+          ];
+          set({ data: mockData, loading: false, error: 'Failed to fetch, showing cached/mock data' });
+        } else {
+          set({ loading: false });
+        }
       }
     },
 
-    startPolling: (intervalMs = 30000) => {
-      const { pollIntervalId, data, fetchMarketData } = get();
+    startPolling: async () => {
+      const { isPolling, fetchMarketData } = get();
+      if (isPolling) return;
 
-      // Prevent duplicate timers
-      if (pollIntervalId) return;
+      // 1. Initial Fetch to get metadata + initial prices
+      await fetchMarketData(false);
 
-      // FIX: Determine if this is the "First Load" or a "Background Re-connection"
-      // If data is empty, we MUST show the loading spinner.
-      const hasExistingData = data.length > 0;
+      // 2. Connect to Binance WebSocket for real-time updates
+      if (ws) {
+        ws.close();
+      }
 
-      // If we have data, isBackground = true (Silent).
-      // If we have NO data, isBackground = false (Show Loading).
-      fetchMarketData(hasExistingData);
+      ws = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
 
-      const id = setInterval(() => {
-        // 4. Visibility Check: Save API calls when tab is hidden
-        if (!document.hidden) {
-          // Timer ticks are always background updates
-          get().fetchMarketData(true);
+      ws.onmessage = (event) => {
+        try {
+          const tickers = JSON.parse(event.data);
+
+          // Optimization: Create a Map for O(1) lookup
+
+          interface BinanceTicker {
+            s: string;
+            c: string;
+          }
+          const tickerMap = new Map<string, string>(tickers.map((t: BinanceTicker) => [t.s, t.c]));
+
+          set((state) => {
+            const updatedData = state.data.map((coin) => {
+              const symbolUC = coin.symbol.toUpperCase();
+              const pair = `${symbolUC}USDT`;
+              const newPrice = tickerMap.get(pair);
+
+              if (newPrice) {
+                return {
+                  ...coin,
+                  currentPrice: parseFloat(newPrice),
+                };
+              }
+              return coin;
+            });
+            return { data: updatedData };
+          });
+        } catch (e) {
+          console.error("WS Parse Error", e);
         }
-      }, intervalMs);
+      };
 
-      set({ pollIntervalId: id, isPolling: true });
+      ws.onclose = () => {
+        console.log("WS Disconnected");
+      };
+
+      set({ isPolling: true });
     },
 
     stopPolling: () => {
-      const { pollIntervalId } = get();
-      if (pollIntervalId) {
-        clearInterval(pollIntervalId);
-        set({ pollIntervalId: null, isPolling: false });
+      if (ws) {
+        ws.close();
+        ws = null;
       }
+      set({ isPolling: false });
     },
   };
 });
