@@ -28,6 +28,10 @@ A high-performance, real-time cryptocurrency dashboard built to monitor market t
 * **Testing**: Vitest, React Testing Library
 * **Visualization**: ECharts for React
 
+## 🏗️ Architecture
+
+![System Architecture](./assets/architecture.png)
+
 ## 🧠 Technical Highlights & Decisions
 
 ### 1. State Management Strategy
