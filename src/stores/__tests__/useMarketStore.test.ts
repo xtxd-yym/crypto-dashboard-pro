@@ -69,7 +69,7 @@ describe('useMarketStore Advanced Logic', () => {
     await act(async () => {
       const promise = result.current.fetchMarketData(true); // <--- Background = true
       // CRITICAL: Loading should remain FALSE to prevent UI flicker
-      expect(result.current.loading).toBe(false); 
+      expect(result.current.loading).toBe(false);
       await promise;
     });
   });
@@ -87,37 +87,76 @@ describe('useMarketStore Advanced Logic', () => {
     expect(config?.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it('should start polling and fetch data periodically', async () => {
-    mockedAxios.get.mockResolvedValue({ data: [] }); // Always return success
+
+  it('should start polling (connect WebSocket) and update prices', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: [{
+        id: 'bitcoin',
+        symbol: 'btc',
+        name: 'Bitcoin',
+        current_price: 50000,
+        sparkline_in_7d: { price: [] }
+      }]
+    });
+
+    // Mock WebSocket
+    const closeMock = vi.fn();
+    // Use a standard function so it can be called with 'new'
+    const MockWebSocket = vi.fn(function () {
+      return {
+        close: closeMock,
+        onmessage: null,
+        onclose: null,
+      };
+    });
+    vi.stubGlobal('WebSocket', MockWebSocket);
+
     const { result } = renderHook(() => useMarketStore());
 
     // 1. Start Polling
-    act(() => {
-      result.current.startPolling(10000); // 10s interval
+    await act(async () => {
+      await result.current.startPolling();
     });
 
     expect(result.current.isPolling).toBe(true);
-    // Should call immediately
-    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+    expect(MockWebSocket).toHaveBeenCalledWith('wss://stream.binance.com:9443/ws/!miniTicker@arr');
+    expect(mockedAxios.get).toHaveBeenCalledTimes(1); // Initial fetch
 
-    // 2. Advance Time 10s
-    await act(async () => {
-      vi.advanceTimersByTime(10000);
-    });
+    // 2. Simulate WS Message
 
-    // Should call again
-    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
-  });
-
-  it('should stop polling when requested', async () => {
-    mockedAxios.get.mockResolvedValue({ data: [] });
-    const { result } = renderHook(() => useMarketStore());
+    const wsInstance = MockWebSocket.mock.results[0].value;
 
     act(() => {
-      result.current.startPolling(1000);
+      if (wsInstance.onmessage) {
+        wsInstance.onmessage({
+          data: JSON.stringify([
+            { s: 'BTCUSDT', c: '51000.00' } // Bitcoin updated price
+          ])
+        });
+      }
     });
-    
-    expect(result.current.pollIntervalId).not.toBeNull();
+
+    // Verify Store Update
+    expect(result.current.data[0].currentPrice).toBe(51000);
+  });
+
+  it('should stop polling (close WebSocket) when requested', async () => {
+    mockedAxios.get.mockResolvedValue({ data: [] });
+
+    const closeMock = vi.fn();
+    const MockWebSocket = vi.fn(function () {
+      return {
+        close: closeMock,
+        onmessage: null,
+      };
+    });
+    vi.stubGlobal('WebSocket', MockWebSocket);
+
+    const { result } = renderHook(() => useMarketStore());
+
+    await act(async () => {
+      await result.current.startPolling();
+    });
 
     // Stop
     act(() => {
@@ -125,13 +164,6 @@ describe('useMarketStore Advanced Logic', () => {
     });
 
     expect(result.current.isPolling).toBe(false);
-    expect(result.current.pollIntervalId).toBeNull();
-
-    // Advance time - verify NO new calls happen
-    mockedAxios.get.mockClear();
-    await act(async () => {
-      vi.advanceTimersByTime(5000);
-    });
-    expect(mockedAxios.get).not.toHaveBeenCalled();
+    expect(closeMock).toHaveBeenCalled();
   });
 });
