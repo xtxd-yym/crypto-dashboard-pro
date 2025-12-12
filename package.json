@@ -19,6 +19,7 @@
     "lucide-react": "^0.555.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-frame-throttle": "^1.0.2",
     "react-router-dom": "^7.9.6",
     "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0",

@@ -2,29 +2,35 @@ import { useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMarketStore } from '../../stores/useMarketStore';
 import { SparklineChart } from '../../components/ui/SparklineChart';
+import { useFrameThrottledState } from 'react-frame-throttle';
 
 export const MarketPage = () => {
   const { data } = useMarketStore();
   const [search, setSearch] = useState('');
-  
+
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   // 1. Filter the Full Dataset first
-  const filteredCoins = data.filter(coin => 
-    coin.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredCoins = data.filter(coin =>
+    coin.name.toLowerCase().includes(search.toLowerCase()) ||
     coin.symbol.toLowerCase().includes(search.toLowerCase())
   );
 
   // 2. Calculate Pagination Logic based on filtered results
   const totalPages = Math.ceil(filteredCoins.length / itemsPerPage);
-  
+
   // 3. Slice the data for the CURRENT page only
   // This is the performance fix: We only render these 10 items
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentCoins = filteredCoins.slice(indexOfFirstItem, indexOfLastItem);
+
+  // 4. Throttle the rendered data to max 60fps
+  // This ensures that even if store updates are faster than 60fps (e.g. WebSocket),
+  // the UI only re-renders at readable frame rates.
+  const throttledCoins = useFrameThrottledState(currentCoins, { fps: 60 });
 
   // Handler: Reset to page 1 if user types in search
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +53,7 @@ export const MarketPage = () => {
       {/* Search Bar */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <input 
+        <input
           type="text"
           placeholder="Search coins (e.g. Solana)..."
           value={search}
@@ -73,7 +79,7 @@ export const MarketPage = () => {
             </thead>
             <tbody className="divide-y divide-dark-border">
               {/* Map over the SLICED currentCoins array */}
-              {currentCoins.map((coin) => (
+              {throttledCoins.map((coin) => (
                 <tr key={coin.id} className="hover:bg-dark-border/30 transition-colors group">
                   <td className="p-4 text-center text-slate-500 font-mono text-sm">
                     {coin.marketCapRank}
@@ -97,9 +103,9 @@ export const MarketPage = () => {
                   <td className="p-4 w-32">
                     <div className="h-10 w-24 ml-auto">
                       {/* Sparkline Chart */}
-                      <SparklineChart 
-                        data={coin.sparklineIn7d.price} 
-                        color={coin.priceChangePercentage24h >= 0 ? 'rgb(74, 222, 128)' : 'rgb(248, 113, 113)'} 
+                      <SparklineChart
+                        data={coin.sparklineIn7d.price}
+                        color={coin.priceChangePercentage24h >= 0 ? 'rgb(74, 222, 128)' : 'rgb(248, 113, 113)'}
                       />
                     </div>
                   </td>
@@ -113,7 +119,7 @@ export const MarketPage = () => {
               ))}
             </tbody>
           </table>
-          
+
           {/* Empty State */}
           {filteredCoins.length === 0 && (
             <div className="p-12 text-center text-slate-500">
