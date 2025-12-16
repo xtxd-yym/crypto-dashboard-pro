@@ -22,7 +22,7 @@ interface RawCoinData {
 
 export const useMarketStore = create<MarketState>((set, get) => {
   let abortController: AbortController | null = null;
-  let ws: WebSocket | null = null;
+  let worker: Worker | null = null;
 
   return {
     data: [],
@@ -110,57 +110,46 @@ export const useMarketStore = create<MarketState>((set, get) => {
       // 1. Initial Fetch to get metadata + initial prices
       await fetchMarketData(false);
 
-      // 2. Connect to Binance WebSocket for real-time updates
-      if (ws) {
-        ws.close();
+      // 2. Offload to Web Worker
+      if (!worker) {
+        worker = new Worker(new URL('../workers/market.worker.ts', import.meta.url), {
+          type: 'module',
+        });
+
+        worker.onmessage = (event) => {
+          const { type, payload } = event.data;
+
+          if (type === 'PRICE_UPDATE') {
+            set((state) => {
+              const updatedData = state.data.map((coin) => {
+                const pair = `${coin.symbol.toUpperCase()}USDT`;
+                const newPrice = payload[pair];
+
+                if (newPrice) {
+                  return {
+                    ...coin,
+                    currentPrice: newPrice,
+                  };
+                }
+                return coin;
+              });
+              return { data: updatedData };
+            });
+          }
+        };
       }
 
-      ws = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
-
-      ws.onmessage = (event) => {
-        try {
-          const tickers = JSON.parse(event.data);
-
-          // Optimization: Create a Map for O(1) lookup
-
-          interface BinanceTicker {
-            s: string;
-            c: string;
-          }
-          const tickerMap = new Map<string, string>(tickers.map((t: BinanceTicker) => [t.s, t.c]));
-
-          set((state) => {
-            const updatedData = state.data.map((coin) => {
-              const symbolUC = coin.symbol.toUpperCase();
-              const pair = `${symbolUC}USDT`;
-              const newPrice = tickerMap.get(pair);
-
-              if (newPrice) {
-                return {
-                  ...coin,
-                  currentPrice: parseFloat(newPrice),
-                };
-              }
-              return coin;
-            });
-            return { data: updatedData };
-          });
-        } catch (e) {
-          console.error("WS Parse Error", e);
-        }
-      };
-
-      ws.onclose = () => {
-        console.log("WS Disconnected");
-      };
+      const symbols = get().data.map((c) => c.symbol);
+      worker.postMessage({ type: 'ENABLE_POLLING', payload: symbols });
 
       set({ isPolling: true });
     },
 
     stopPolling: () => {
-      if (ws) {
-        ws.close();
-        ws = null;
+      if (worker) {
+        worker.postMessage({ type: 'DISABLE_POLLING' });
+        worker.terminate();
+        worker = null;
       }
       set({ isPolling: false });
     },
