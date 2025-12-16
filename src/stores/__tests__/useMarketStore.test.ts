@@ -106,7 +106,8 @@ describe('useMarketStore Advanced Logic', () => {
     // Mock Worker
     const postMessageMock = vi.fn();
     const terminateMock = vi.fn();
-    const MockWorker = vi.fn(function () {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const MockWorker = vi.fn(function (_url: string | URL, _options?: WorkerOptions) {
       return {
         postMessage: postMessageMock,
         terminate: terminateMock,
@@ -161,7 +162,8 @@ describe('useMarketStore Advanced Logic', () => {
 
     const postMessageMock = vi.fn();
     const terminateMock = vi.fn();
-    const MockWorker = vi.fn(function () {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const MockWorker = vi.fn(function (_url: string | URL, _options?: WorkerOptions) {
       return {
         postMessage: postMessageMock,
         terminate: terminateMock,
