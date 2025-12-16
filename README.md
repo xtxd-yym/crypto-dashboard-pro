@@ -1,6 +1,6 @@
 # 📈 Crypto Dashboard
 
-[![CI/CD Pipeline](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xtxd-yym/crypto-dashboard-pro/actions/workflows/ci.yml)
 
 A high-performance, real-time cryptocurrency dashboard built to monitor market trends and manage asset portfolios. Designed with a focus on **performance**, **clean architecture**, and **testability**.
 
