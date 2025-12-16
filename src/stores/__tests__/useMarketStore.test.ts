@@ -106,7 +106,7 @@ describe('useMarketStore Advanced Logic', () => {
     // Mock Worker
     const postMessageMock = vi.fn();
     const terminateMock = vi.fn();
-    const MockWorker = vi.fn(function () {
+    const MockWorker = vi.fn(function (_url: unknown, _options: unknown) {
       return {
         postMessage: postMessageMock,
         terminate: terminateMock,
@@ -161,7 +161,7 @@ describe('useMarketStore Advanced Logic', () => {
 
     const postMessageMock = vi.fn();
     const terminateMock = vi.fn();
-    const MockWorker = vi.fn(function () {
+    const MockWorker = vi.fn(function (_url: unknown, _options: unknown) {
       return {
         postMessage: postMessageMock,
         terminate: terminateMock,
